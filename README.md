@@ -100,7 +100,7 @@ Second edit the **config.txt** file and assign the correct values to the applica
 
 Second run the application 
 
-    python 1-real_time_web_attack_detection_and_aler.py
+    python 1-real_time_web_attack_detection_and_alert.py
    
 Then the python script is supposed to run permanently.
 
