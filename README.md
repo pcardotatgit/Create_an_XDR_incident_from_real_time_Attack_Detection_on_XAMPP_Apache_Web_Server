@@ -116,6 +116,19 @@ In the application console you will see the log line and at the same time you wi
 
 The incident will appear into XDR Incident Manager just after that.
 
+## Stop the script
+
+This script uses an infinite loop and it doesn't stop when we uuse CTRL-C.
+
+Actually if we do a CTRL-C we have to wait for a new web connexion to the web server before seeing the script stop.
+
+For this reason there is a specific statement whch stop the script when we send to the Web server the following path into the URL :
+
+    /stopwatching
+    http://web_server_address/stopwatching
+
+The script will stop if you send this to the web server from you browser.
+    
 ## Clean Up demo data
 
 Run the **2-delete_XDR_demo_data.py** script in order to completely clean up Data created into XDR.
