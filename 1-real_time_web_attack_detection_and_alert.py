@@ -16,8 +16,8 @@ from create_XDR_incident import go_for_incident
 from crayons import *
 
 #path_to_watch = "." # look at the current directory
-path_to_watch = "C:\\dir-1\\subdir-1\\subdir-2\\log_file_subdir_location"
-file_to_watch = "access_log" # look for changes to a file called access_log*
+path_to_watch = "C:\\patrick\\zazou_dev_FY_23\\zazou_xdr_demos\\_logs.zmwsc"
+file_to_watch = "access_log" # look for changes to a file called test.txt*
 
 observables={}
 
@@ -47,40 +47,60 @@ targets=[
 
 def check_ids_signature(line):
     indicator=""
-    if '/phpmyadmin' in line and 'pma_password=' in line and not "token" in line:
-        indicator="Impact HIGH *;* Admin access to phpmyadmin*;* "
+    line=line.lower()
+    title="Web Attack from "
+    if '/phpmyadmin' in line and 'pma_password=' in line:
+        indicator="Impact HIGH *;* phpmyadmin access attempt *;* "
+        title="phpmyadmin access attempt from "
+    elif "+or+" in line or "+like+" in line or "--+" in line or "+union+" in line or "drop+" in line or "+select+" in line:
+        indicator="Impact High *;* SQLi Attack Attempt *;* " 
+        title="SQLi Attack from "
+    elif "script" in line or "alert" in line:
+        indicator="Impact High *;* XSS Attack Attempt *;* " 
+        title="XSS Attack from "
+    elif "../" in line or "..%2F" in line or "..%5C" in line:
+        indicator="Impact High *;* Directory Traversal Attack Attempt *;* " 
+        title="Directory Traversal Attack from "
     elif "/cgi-bin/ViewLog.asp" in line or "Akitaskid.arm7" in line:
-        indicator="Impact High *;* Device Vulnerability Exploit ( zyxel ) *;* "        
+        indicator="Impact High *;* Device Vulnerability Exploit ( zyxel ) *;* "  
+        title="Device Vulnerability Exploit ( zyxel ) from "
     elif "HelloThinkPHP" in line:
-        indicator="Impact High *;* Application Vulnerability Exploit ( Wordpress ) *;* "         
+        indicator="Impact High *;* Application Vulnerability Exploit ( Wordpress ) *;* " 
+        title="Application Vulnerability Exploit ( Wordpress ) from "
     elif "goform/setUsbUnload" in line:
-        indicator="Impact High *;* Device Vulnerability Exploit ( Tenda AC1900 Router AC15 Model Remote Code Execution Vulnerability ) *;* "         
+        indicator="Impact High *;* Device Vulnerability Exploit ( Tenda AC1900 Router AC15 Model Remote Code Execution Vulnerability ) *;* "        
+        title="Device Vulnerability Exploit ( Tenda AC1900 Router AC15 Model Remote Code Execution Vulnerability ) from "
     elif "netgear" in line:
-        indicator="Impact High *;* Device Vulnerability Exploit ( Netgear ) *;* "          
+        indicator="Impact High *;* Device Vulnerability Exploit ( Netgear ) *;* "
+        title="Device Vulnerability Exploit ( Netgear ) from "        
     elif "/shell" in line and "wget" in line:
-        indicator="Impact High *;* Device Vulnerability Exploit ( ---- ) *;* "                             
+        indicator="Impact High *;* Device Vulnerability Exploit ( ---- ) *;* "
+        title="Device Vulnerability Exploit ( shell execution ) from " 
     elif "HelloThink" in line:
-        indicator="Impact High *;* Application Vulnerability Exploit ( HelloThink ) *;* "          
+        indicator="Impact High *;* Application Vulnerability Exploit ( HelloThink ) *;* " 
+        title="Application Vulnerability Exploit ( HelloThink ) from " 
     elif "XDEBUG_SESSION_START=phpstorm" in line:
-        indicator="Impact High *;* Application Vulnerability Exploit ( phpstorm ) *;* "                  
+        indicator="Impact High *;* Application Vulnerability Exploit ( phpstorm ) *;* "
+        title="Application Vulnerability Exploit ( phpstorm ) from "
     elif ( line.count('..')>2 ):
-        indicator="Impact High *;* Directory Traversal *;* "           
+        indicator="Impact High *;* Directory Traversal *;* " 
+        title="Directory Traversal attempt from "
     elif ( line.count('%')>10 ):
-        indicator="Impact Medium *;* Obfuscation attempt *;* "            
+        indicator="Impact Medium *;* Obfuscation attempt *;* " 
+        title="Patern Obfuscation attempt attempt from "
     elif "/etc/passwd" in line:
-        indicator="Impact Medium *;* /etc/passwd access attempt *;* "            
-    elif "+union" in line and "+select" in line:
-        indicator="Impact High *;* SQLI Attempt *;* "  
+        indicator="Impact Medium *;* /etc/passwd access attempt *;* " 
+        title="/etc/passwd access attempt from "
     elif '" 404 ' in line or '" 403 ' in line:
         #indicator="Impact Low *;* Web Site Resource Scan to non existing content *;* "   
         indicator=""
+        title="scan for web application from "
     elif "/robots.txt" in line or "/sitemap.xml" in line:
-        indicator="Impact Low *;* Web Site Mapping attempt robot.txt access*;* "         
-    elif "<script" in line or "%3Cscript" in line or "alert(" in line or "alert%28" in line:
-        indicator="Impact Low *;* Code Injection into formular ( XSS attempt )*;* "                                
+        indicator="Impact Low *;* Web Site Mapping attempt robot.txt access*;* "  
+        title="Web Site Mapping attempt robot.txt access from "
     else:
         indicator=""
-    return indicator
+    return (indicator,title)
  
 def keep_this_ip_in_observables(line):
     ip=line.split(" ")[0]    
@@ -172,7 +192,9 @@ def watch_log():
             if file == file_to_watch:
                 newText = a.read()
                 if newText != "":
-                    alert=check_ids_signature(newText)
+                    print('...Alert_check...')
+                    title=""
+                    alert,title=check_ids_signature(newText)
                     if alert!="":
                         ip_list=[]
                         print(newText)
@@ -180,16 +202,16 @@ def watch_log():
                         file_out.write(line_out)
                         keep_this_ip_in_observables(newText)
                         for item in observables:
-                            #print(green(observables[item]['nb']))
-                            ''' some additionnal correlation for futur use
-                            if observables[item]['nb']>5:
+                            print(cyan(observables[item]['nb']))
+                            if observables[item]['nb']==1:
                                 print(cyan(f"Observable to add to XDR Sighting : {item}",bold=True))
                                 ip_list.append(item)      
-                            '''
-                            ip_list.append(item)
-                        target_list=get_targets()
-                        observables_objects,observable_relationships=create_json_observables(ip_list,target_list)
-                        go_for_incident(observables_objects,targets,observable_relationships) 
+                                target_list=get_targets()
+                                observables_objects,observable_relationships=create_json_observables(ip_list,target_list)
+                                print()
+                                print(yellow('Create XDR Incident Now',bold=True))
+                                print()
+                                go_for_incident(observables_objects,targets,observable_relationships,title) 
                     if "/stopwatching" in newText:
                         print()
                         print('STOP WATCHING LOG FILE')
