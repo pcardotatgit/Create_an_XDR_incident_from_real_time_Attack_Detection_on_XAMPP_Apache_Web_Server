@@ -13,7 +13,7 @@ import os.path
 
 # Set global variable
 description ='**Description:** Malicious IP addresses Attacked a Company Web Server'
-incident_title='Malicious Public IP address detected'
+#incident_title='Malicious Public IP address detected'
 method="config.txt"  # for futur use :  must be either config.txt or ../key  or database  or vault or environment variable
 host = ""
 host_for_token=""
@@ -173,7 +173,7 @@ def create_incident_xid():
     print("  - Incident External ID : ",cyan(incident_xid,bold=True))
     return incident_xid
 
-def create_incident_json():
+def create_incident_json(incident_title):
     print(yellow("- > Step 1.1 create_incident_xid",bold=True))
     # Build the incident objects
     #xid="transient:"+create_incident_xid() DEBUG PATRIKC
@@ -311,12 +311,12 @@ def create_incident(host_for_token,access_token,bundle):
         print() 
     return 1
    
-def go_for_incident(the_observables,the_targets,the_observable_relationships):
+def go_for_incident(the_observables,the_targets,the_observable_relationships,title):
     print()
     print(yellow("- Step 1 create Incident JSON payload",bold=True))
-    global incident_title
-    incident_title=incident_title+' '+the_observables[1]['value']
-    incident_json,incident_xid=create_incident_json()
+    #global incident_title
+    incident_title=title+' '+the_observables[1]['value']
+    incident_json,incident_xid=create_incident_json(incident_title)
     print()
     print(yellow("- Step 2 create Sighting JSON payload",bold=True))
     sighting_xid = create_sighting_xid("Sighting created for asset enrichment test")
